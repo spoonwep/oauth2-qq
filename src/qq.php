@@ -1,99 +1,183 @@
-<?php namespace Stevenmaguire\OAuth2\Client\Provider;
+<?php namespace spoonwep\OAuth2\Client\Provider;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use spoonwep\OAuth2\Client\qqResourceOwner;
 
-class Bitbucket extends AbstractProvider
+class qq extends AbstractProvider
 {
-    use BearerAuthorizationTrait;
+	use BearerAuthorizationTrait;
 
-    /**
-     * Get authorization url to begin OAuth flow
-     *
-     * @return string
-     */
-    public function getBaseAuthorizationUrl()
-    {
-        return 'https://bitbucket.org/site/oauth2/authorize';
-    }
+	/**
+	 * @var
+	 */
+	public $openid;
 
-    /**
-     * Get access token url to retrieve token
-     *
-     * @return string
-     */
-    public function getBaseAccessTokenUrl(array $params)
-    {
-        return 'https://bitbucket.org/site/oauth2/access_token';
-    }
+	/**
+	 * @var string
+	 */
+	public $domain = "https://graph.qq.com";
 
-    /**
-     * Get provider url to fetch user details
-     *
-     * @param  AccessToken $token
-     *
-     * @return string
-     */
-    public function getResourceOwnerDetailsUrl(AccessToken $token)
-    {
-        return 'https://api.bitbucket.org/2.0/user';
-    }
+	/**
+	 * Get authorization url to begin OAuth flow
+	 *
+	 * @return string
+	 */
+	public function getBaseAuthorizationUrl ()
+	{
+		return $this->domain . '/oauth2.0/authorize';
+	}
 
-    /**
-     * Get the default scopes used by this provider.
-     *
-     * This should not be a complete list of all scopes, but the minimum
-     * required for the provider user interface!
-     *
-     * @return array
-     */
-    protected function getDefaultScopes()
-    {
-        return [];
-    }
+	/**
+	 * Get access token url to retrieve token
+	 * @param array $params
+	 * @return string
+	 */
+	public function getBaseAccessTokenUrl (array $params)
+	{
+		return $this->domain . '/oauth2.0/token';
+	}
 
-    /**
-     * Check a provider response for errors.
-     *
-     * @throws IdentityProviderException
-     * @param  ResponseInterface $response
-     * @param  string $data Parsed response data
-     * @return void
-     */
-    protected function checkResponse(ResponseInterface $response, $data)
-    {
-        if (isset($data['error'])) {
-            throw new IdentityProviderException($data['error_description'], $response->getStatusCode(), $response);
-        }
-    }
+	/**
+	 * Get provider url to fetch user details
+	 * @param AccessToken $token
+	 * @return string
+	 */
+	public function getResourceOwnerDetailsUrl (AccessToken $token)
+	{
+		$OpenidJson   = $this->fetchOpenid($token);
+		$openId       = json_decode($OpenidJson, TRUE);
+		$this->openid = $openId['openid'];
 
-    /**
-     * Generate a user object from a successful user details request.
-     *
-     * @param object $response
-     * @param AccessToken $token
-     * @return League\OAuth2\Client\Provider\ResourceOwnerInterface
-     */
-    protected function createResourceOwner(array $response, AccessToken $token)
-    {
-        return new BitbucketResourceOwner($response);
-    }
+		return $this->domain . '/user/get_user_info?access_token=' . $token . '&oauth_consumer_key=' . $this->clientId . '&openid=' . $openId['openid'];
+	}
 
-    /**
-     * Returns a prepared request for requesting an access token.
-     *
-     * @param array $params Query string parameters
-     * @return Psr\Http\Message\RequestInterface
-     */
-    protected function getAccessTokenRequest(array $params)
-    {
-        $request = parent::getAccessTokenRequest($params);
-        $uri = $request->getUri()
-            ->withUserInfo($this->clientId, $this->clientSecret);
+	/**
+	 * Get openid url to fetch it
+	 * @param AccessToken $token
+	 * @return string
+	 */
+	protected function getOpenidUrl (AccessToken $token)
+	{
+		return $this->domain . '/oauth2.0/me?access_token=' . $token;
+	}
 
-        return $request->withUri($uri);
-    }
+	/**
+	 * Get openid
+	 * @param AccessToken $token
+	 * @return mixed
+	 */
+	protected function fetchOpenid (AccessToken $token)
+	{
+		$url     = $this->getOpenidUrl($token);
+		$request = $this->getAuthenticatedRequest(self::METHOD_GET, $url, $token);
+		$data    = $this->getResponse($request);
+
+		if (strpos($data, "callback") !== FALSE) {
+			$data = str_replace("callback( ", "", $data);
+			$data = str_replace(" );", "", $data);
+		}
+
+		return $data;
+	}
+
+	/**
+	 * get accesstoken
+	 *
+	 * The Content-type of server's returning is 'text/html;charset=utf-8'
+	 * so it has to be rewritten
+	 *
+	 * @param mixed $grant
+	 * @param array $options
+	 * @return AccessToken
+	 */
+	public function getAccessToken ($grant, array $options = [])
+	{
+		$grant = $this->verifyGrant($grant);
+
+		$params = [
+			'client_id'     => $this->clientId,
+			'client_secret' => $this->clientSecret,
+			'redirect_uri'  => $this->redirectUri,
+		];
+
+		$params   = $grant->prepareRequestParameters($params, $options);
+		$request  = $this->getAccessTokenRequest($params);
+		$response = $this->getSpecificResponse($request);
+		$prepared = $this->prepareAccessTokenResponse($response);
+		$token    = $this->createAccessToken($prepared, $grant);
+
+		return $token;
+	}
+
+	/**
+	 * @param RequestInterface $request
+	 * @return mixed
+	 * @throws IdentityProviderException
+	 */
+	protected function getSpecificResponse (RequestInterface $request)
+	{
+		$response = $this->sendRequest($request);
+		$parsed   = $this->parseSpecificResponse($response);
+
+		$this->checkResponse($response, $parsed);
+
+		return $parsed;
+	}
+
+	/**
+	 * A specific parseResponse function
+	 * @param ResponseInterface $response
+	 * @return mixed
+	 */
+	protected function parseSpecificResponse (ResponseInterface $response)
+	{
+		$content = (string)$response->getBody();
+		parse_str($content, $parsed);
+
+		return $parsed;
+	}
+
+	/**
+	 * Check a provider response for errors.
+	 *
+	 * @throws IdentityProviderException
+	 * @param  ResponseInterface $response
+	 * @param  string $data Parsed response data
+	 * @return void
+	 */
+	protected function checkResponse (ResponseInterface $response, $data)
+	{
+		if (isset($data['error'])) {
+			throw new IdentityProviderException($data['error_description'], $response->getStatusCode(), $response);
+		}
+	}
+
+	/**
+	 * Get the default scopes used by this provider.
+	 *
+	 * This should not be a complete list of all scopes, but the minimum
+	 * required for the provider user interface!
+	 *
+	 * @return array
+	 */
+	protected function getDefaultScopes ()
+	{
+		return [];
+	}
+
+	/**
+	 * Generate a user object from a successful user details request.
+	 * @param array $response
+	 * @param AccessToken $token
+	 * @return qqResourceOwner
+	 */
+	protected function createResourceOwner (array $response, AccessToken $token)
+	{
+		return new qqResourceOwner($response);
+	}
 }
