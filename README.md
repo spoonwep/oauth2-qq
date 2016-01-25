@@ -1,5 +1,20 @@
 # oauth2-qq
 QQ OAuth 2.0 support for the PHP League's OAuth 2.0 Client
+##Install
+You can open a terminal and type in
+```shell
+composer require spoonwep/oauth2-qq
+```
+or require in a composer.json
+```json
+"require": {
+	"spoonwep/oauth2-qq": "^1.0"
+}
+```
+then run:
+```shell
+composer update
+```
 ##Useage
 ```php
 session_start();
