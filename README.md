@@ -35,9 +35,15 @@ if (!isset($_GET['code'])) {
 	$token = $provider->getAccessToken('authorization_code', [
 		'code' => $_GET['code']
 	]);
-	$user = $provider->getResourceOwner($token);
-	$user = $user->toArray();		
-	print_r($user);
+
+	//fetch userinfo returned by serverside
+    $user = $provider->getResourceOwner($token);
+    $user = $user->toArray();
+    print_r($user);
+
+    //get user's unique openid from serverside
+    $openid = $provider->openid;
+    printf('User\'s openid:%s', $openid);
 }
 ```
 ###License
