@@ -1,108 +1,99 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: Administrator
- * Date: 2015/3/6
- * Time: 15:47
- */
-namespace spoonwep\OAuth2\Client\Provider;
+<?php namespace Stevenmaguire\OAuth2\Client\Provider;
 
-use League\OAuth2\Client\Entity\User;
 use League\OAuth2\Client\Provider\AbstractProvider;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
+use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
+use Psr\Http\Message\ResponseInterface;
 
-class qq extends AbstractProvider
+class Bitbucket extends AbstractProvider
 {
+    use BearerAuthorizationTrait;
 
-	public $responseType = 'string';
+    /**
+     * Get authorization url to begin OAuth flow
+     *
+     * @return string
+     */
+    public function getBaseAuthorizationUrl()
+    {
+        return 'https://bitbucket.org/site/oauth2/authorize';
+    }
 
-	public $domain = "https://graph.qq.com";
+    /**
+     * Get access token url to retrieve token
+     *
+     * @return string
+     */
+    public function getBaseAccessTokenUrl(array $params)
+    {
+        return 'https://bitbucket.org/site/oauth2/access_token';
+    }
 
-	public $method = "GET";
+    /**
+     * Get provider url to fetch user details
+     *
+     * @param  AccessToken $token
+     *
+     * @return string
+     */
+    public function getResourceOwnerDetailsUrl(AccessToken $token)
+    {
+        return 'https://api.bitbucket.org/2.0/user';
+    }
 
-	public $clientId;
+    /**
+     * Get the default scopes used by this provider.
+     *
+     * This should not be a complete list of all scopes, but the minimum
+     * required for the provider user interface!
+     *
+     * @return array
+     */
+    protected function getDefaultScopes()
+    {
+        return [];
+    }
 
-	public $clientSecret;
+    /**
+     * Check a provider response for errors.
+     *
+     * @throws IdentityProviderException
+     * @param  ResponseInterface $response
+     * @param  string $data Parsed response data
+     * @return void
+     */
+    protected function checkResponse(ResponseInterface $response, $data)
+    {
+        if (isset($data['error'])) {
+            throw new IdentityProviderException($data['error_description'], $response->getStatusCode(), $response);
+        }
+    }
 
-	public $openid;
+    /**
+     * Generate a user object from a successful user details request.
+     *
+     * @param object $response
+     * @param AccessToken $token
+     * @return League\OAuth2\Client\Provider\ResourceOwnerInterface
+     */
+    protected function createResourceOwner(array $response, AccessToken $token)
+    {
+        return new BitbucketResourceOwner($response);
+    }
 
-	public function __construct ($options = [])
-	{
-		parent::__construct();
-		foreach ($options as $option => $value) {
-			if (property_exists($this, $option)) {
-				$this->{$option} = $value;
-			}
-		}
-	}
+    /**
+     * Returns a prepared request for requesting an access token.
+     *
+     * @param array $params Query string parameters
+     * @return Psr\Http\Message\RequestInterface
+     */
+    protected function getAccessTokenRequest(array $params)
+    {
+        $request = parent::getAccessTokenRequest($params);
+        $uri = $request->getUri()
+            ->withUserInfo($this->clientId, $this->clientSecret);
 
-	public function urlAuthorize ()
-	{
-		return $this->domain . '/oauth2.0/authorize';
-	}
-
-	public function urlAccessToken ()
-	{
-		return $this->domain . '/oauth2.0/token';
-	}
-
-	protected function fetchUserDetails (AccessToken $token)
-	{
-		$url = $this->urlUserDetails($token);
-
-		$data = $this->fetchProviderData($url);
-
-		return $data;
-	}
-
-	public function urlUserDetails (AccessToken $token)
-	{
-		$OpenidJson   = $this->fetchOpenid($token);
-		$openId       = json_decode($OpenidJson, TRUE);
-		$this->openid = $openId['openid'];
-
-		return $this->domain . '/user/get_user_info?access_token=' . $token->accessToken . '&oauth_consumer_key=' . $this->clientId . '&openid=' . $openId['openid'];
-	}
-
-	protected function fetchOpenid (AccessToken $token)
-	{
-		$url  = $this->urlOpenid($token);
-		$data = $this->fetchProviderData($url);
-
-		if (strpos($data, "callback") !== FALSE) {
-			$data = str_replace("callback( ", "", $data);
-			$data = str_replace(");", "", $data);
-		}
-
-		return $data;
-	}
-
-	protected function urlOpenid (AccessToken $token)
-	{
-		return $this->domain . '/oauth2.0/me?access_token=' . $token->accessToken;
-	}
-
-	public function userDetails ($response, AccessToken $token)
-	{
-		$user = new User();
-
-		$user->exchangeArray([
-			'uid'                => $this->openid,
-			'nickname'           => $response->nickname,
-			'figureurl'          => $response->figureurl,
-			'figureurl_1'        => $response->figureurl_qq_1,
-			'figureurl_2'        => $response->figureurl_2,
-			'figureurl_qq_1'     => $response->figureurl_qq_1,
-			'figureurl_qq_2'     => $response->figureurl_qq_2,
-			'gender'             => $response->gender,
-			'is_yellow_vip'      => $response->is_yellow_vip,
-			'vip'                => $response->vip,
-			'yellow_vip_level'   => $response->yellow_vip_level,
-			'level'              => $response->level,
-			'is_yellow_year_vip' => $response->is_yellow_year_vip
-		]);
-
-		return $user;
-	}
-
+        return $request->withUri($uri);
+    }
 }
