@@ -8,7 +8,7 @@ composer require spoonwep/oauth2-qq
 or require in a composer.json
 ```json
 "require": {
-	"spoonwep/oauth2-qq": "^1.0"
+	"spoonwep/oauth2-qq": "~1.3"
 }
 ```
 then run:
