@@ -19,7 +19,7 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "league/oauth2-client": "~1.0"
+        "league/oauth2-client": "^2.2"
     },
     "autoload": {
         "psr-4": {
