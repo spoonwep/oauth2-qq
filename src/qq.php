@@ -79,6 +79,7 @@ class Qq extends AbstractProvider
         $parsed  = $data[0];
         if (strpos($parsed, "callback") !== FALSE) {
             preg_match('/{(.*)}/', $parsed, $data);
+            $data = $data[0];
         }
 
 		return $data;
