@@ -75,10 +75,10 @@ class Qq extends AbstractProvider
 	{
 		$url     = $this->getOpenidUrl($token);
 		$request = $this->getAuthenticatedRequest(self::METHOD_GET, $url, $token);
-        $data    = $this->getSpecificResponse($request);
-        if (strpos($data, "callback") !== FALSE) {
-            preg_match('/{(.*)}/', $data, $data);
-            $data = $data[0];
+        $data    = array_keys($this->getSpecificResponse($request));
+        $parsed  = $data[0];
+        if (strpos($parsed, "callback") !== FALSE) {
+            preg_match('/{(.*)}/', $parsed, $data);
         }
 
 		return $data;
@@ -135,7 +135,10 @@ class Qq extends AbstractProvider
 	 */
 	protected function parseSpecificResponse (ResponseInterface $response)
 	{
-		return (string)$response->getBody();
+        $content = (string)$response->getBody();
+        parse_str($content, $parsed);
+
+        return $parsed;
 	}
 
 	/**
