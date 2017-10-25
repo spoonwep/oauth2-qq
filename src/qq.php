@@ -8,7 +8,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use spoonwep\OAuth2\Client\qqResourceOwner;
 
-class Qq extends AbstractProvider
+class qq extends AbstractProvider
 {
 	use BearerAuthorizationTrait;
 
