@@ -18,7 +18,7 @@ composer update
 ##Useage
 ```php
 session_start();
-$provider = new \spoonwep\OAuth2\Client\Provider\qq([
+$provider = new \spoonwep\OAuth2\Client\Provider\Qq([
 	'clientId' => '{QQ APP ID}',
 	'clientSecret' => '{QQ APP KEY}',
 	'redirectUri' => 'http://example.com/callback-url',
