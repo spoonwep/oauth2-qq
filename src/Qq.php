@@ -6,7 +6,7 @@ use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Spoonwep\OAuth2\Client\qqResourceOwner;
+use Spoonwep\OAuth2\Client\QqResourceOwner;
 
 class Qq extends AbstractProvider
 {
@@ -174,10 +174,10 @@ class Qq extends AbstractProvider
 	 * Generate a user object from a successful user details request.
 	 * @param array $response
 	 * @param AccessToken $token
-	 * @return qqResourceOwner
+	 * @return QqResourceOwner
 	 */
 	protected function createResourceOwner (array $response, AccessToken $token)
 	{
-		return new qqResourceOwner($response);
+		return new QqResourceOwner($response);
 	}
 }
