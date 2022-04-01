@@ -1,6 +1,9 @@
 # oauth2-qq
+
 QQ OAuth 2.0 support for the PHP League's OAuth 2.0 Client
-##Install
+
+## Install
+
 You can open a terminal and type in
 ```shell
 composer require spoonwep/oauth2-qq
@@ -15,7 +18,9 @@ then run:
 ```shell
 composer update
 ```
-##Useage
+
+## Useage
+
 ```php
 session_start();
 $provider = new \spoonwep\OAuth2\Client\Provider\Qq([
@@ -46,5 +51,7 @@ if (!isset($_GET['code'])) {
     printf('User\'s openid:%s', $openid);
 }
 ```
-###License
+
+### License
+
 The MIT License (MIT). Please see [License](https://github.com/spoonwep/oauth2-qq/blob/master/LICENSE.txt) File for more information.

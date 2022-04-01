@@ -1,8 +1,8 @@
-<?php namespace spoonwep\OAuth2\Client;
+<?php namespace Spoonwep\OAuth2\Client;
 
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 
-class qqResourceOwner implements ResourceOwnerInterface
+class QqResourceOwner implements ResourceOwnerInterface
 {
     /**
      * Raw response

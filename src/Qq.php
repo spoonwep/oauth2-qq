@@ -1,4 +1,4 @@
-<?php namespace spoonwep\OAuth2\Client\Provider;
+<?php namespace Spoonwep\OAuth2\Client\Provider;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
@@ -6,7 +6,7 @@ use League\OAuth2\Client\Token\AccessToken;
 use League\OAuth2\Client\Tool\BearerAuthorizationTrait;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use spoonwep\OAuth2\Client\qqResourceOwner;
+use Spoonwep\OAuth2\Client\qqResourceOwner;
 
 class Qq extends AbstractProvider
 {
